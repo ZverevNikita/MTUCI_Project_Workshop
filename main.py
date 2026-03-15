@@ -13,7 +13,6 @@ user_current_room = {}
 data_lock = asyncio.Lock()
 
 MAX_MESSAGES_PER_ROOM = 100
-MAX_PRIVATE_MESSAGES = 50
 
 rooms['общий'] = {'messages': [], 'users': set()}
 
@@ -249,7 +248,7 @@ async def main():
 
     while True:
         data = await input_group("Новое сообщение", [
-            input(placeholder="Текст (или /join, /create, /msg)", name="msg"),
+            input(placeholder="Сообщение...", name="msg"),
             actions(name="cmd", buttons=[
                 "Отправить",
                 {'label': "Покинуть чат", 'type': 'cancel'}
