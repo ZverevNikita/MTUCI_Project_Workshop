@@ -6,6 +6,7 @@ from pywebio.output import *
 from pywebio.session import run_async, run_js
 from pywebio.platform.fastapi import webio_routes
 import uvicorn
+from ip_identifier import *
 
 rooms = {}
 private_channels = defaultdict(list)
@@ -308,5 +309,7 @@ async def main():
 
 app.routes.extend(webio_routes(main))
 
+ip = get_local_ip()
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.1.77", port=8080)
+    uvicorn.run(app, host=ip, port=8080)
