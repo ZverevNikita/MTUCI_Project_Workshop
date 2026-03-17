@@ -13,20 +13,46 @@ async def main():
         else None
     )
 
-    room_choices = list(models.rooms.keys()) + ['Создать новую комнату']
-    action = await actions("Выберите комнату или создайте новую", buttons=room_choices)
+    while True:
+        room_choices = list(models.rooms.keys()) + ['Создать новую комнату']
+        action = await actions("Выберите комнату или создайте новую", buttons=room_choices)
 
-    if action == 'Создать новую комнату':
-        new_room = await input(
-            "Введите название новой комнаты",
-            required=True,
-            validate=lambda r: "Такая комната уже существует" if r in models.rooms else None
-        )
-        async with models.data_lock:
-            models.rooms[new_room] = {'messages': [], 'users': set()}
-        room_name = new_room
-    else:
-        room_name = action
+        if action == 'Создать новую комнату':
+            new_room = await input(
+                "Введите название новой комнаты",
+                required=True,
+                validate=lambda r: "Такая комната уже существует" if r in models.rooms else None
+            )
+            password = await input(
+                "Введите пароль для комнаты (оставьте пустым, если пароль не нужен)",
+                type=PASSWORD
+            )
+            async with models.data_lock:
+                models.rooms[new_room] = {
+                    'messages': [],
+                    'users': set(),
+                    'password': password if password else None
+                }
+            room_name = new_room
+            break
+        else:
+            room_name = action
+            async with models.data_lock:
+                if room_name not in models.rooms:
+                    toast("Комната не найдена", color='error')
+                    continue
+                need_password = models.rooms[room_name]['password'] is not None
+
+            if need_password:
+                entered = await input("Введите пароль для комнаты", type=PASSWORD)
+                async with models.data_lock:
+                    if room_name not in models.rooms:
+                        toast("Комната больше не существует", color='error')
+                        continue
+                    if models.rooms[room_name]['password'] != entered:
+                        toast("Неверный пароль", color='error')
+                        continue 
+            break
 
     async with models.data_lock:
         models.rooms[room_name]['users'].add(nickname)
@@ -175,8 +201,8 @@ async def main():
                 if not current_room or current_room not in models.rooms:
                     break
                 room_msgs = models.rooms[current_room]['messages']
-                for msg in room_msgs[last_idx:]:
-                    sender, text = msg
+                for i in range(last_idx, len(room_msgs)):
+                    sender, text = room_msgs[i]
                     if sender != nickname:
                         with use_scope('msg-box'):
                             put_markdown(f"`{sender}`: {text}")
@@ -205,19 +231,32 @@ async def main():
             if cmd == '/join' and len(parts) > 1:
                 target_room = parts[1].strip()
                 async with models.data_lock:
-                    if target_room in models.rooms:
-                        old_room = models.user_current_room[nickname]
-                        models.rooms[old_room]['users'].discard(nickname)
-                        models.rooms[old_room]['messages'].append(('📢', f'`{nickname}` покинул чат'))
-                        models.rooms[target_room]['users'].add(nickname)
-                        models.user_current_room[nickname] = target_room
-                        models.rooms[target_room]['messages'].append(('📢', f'`{nickname}` присоединился к чату'))
-                        with use_scope('msg-box', clear=True):
-                            for sender, text in models.rooms[target_room]['messages'][-50:]:
-                                put_markdown(f"`{sender}`: {text}")
-                        toast(f"Перешли в комнату {target_room}")
-                    else:
+                    if target_room not in models.rooms:
                         toast("Комната не найдена", color='error')
+                        continue
+                    need_password = models.rooms[target_room]['password'] is not None
+
+                if need_password:
+                    entered = await input("Введите пароль для комнаты", type=PASSWORD)
+                    async with models.data_lock:
+                        if target_room not in models.rooms:
+                            toast("Комната больше не существует", color='error')
+                            continue
+                        if models.rooms[target_room]['password'] != entered:
+                            toast("Неверный пароль", color='error')
+                            continue
+
+                async with models.data_lock:
+                    old_room = models.user_current_room[nickname]
+                    models.rooms[old_room]['users'].discard(nickname)
+                    models.rooms[old_room]['messages'].append(('📢', f'`{nickname}` покинул чат'))
+                    models.rooms[target_room]['users'].add(nickname)
+                    models.user_current_room[nickname] = target_room
+                    models.rooms[target_room]['messages'].append(('📢', f'`{nickname}` присоединился к чату'))
+                    with use_scope('msg-box', clear=True):
+                        for sender, text in models.rooms[target_room]['messages'][-50:]:
+                            put_markdown(f"`{sender}`: {text}")
+                toast(f"Перешли в комнату {target_room}")
                 continue
             else:
                 toast("Неизвестная команда", color='error')
