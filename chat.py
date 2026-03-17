@@ -13,15 +13,23 @@ async def main():
         else None
     )
 
-    while True:
-        room_choices = list(models.rooms.keys()) + ['Создать новую комнату']
-        action = await actions("Выберите комнату или создайте новую", buttons=room_choices)
+    def validate_room_name(r):
+        if r in models.rooms:
+            return "Такая комната уже существует"
+        if r in '🔄🔄️':
+            return "Запрещённое название для комнаты"
+        return None
 
-        if action == 'Создать новую комнату':
+    while True:
+        room_choices = ['🔄️'] + list(models.rooms.keys()) + ['Создать новую комнату']
+        action = await actions("Выберите комнату или создайте новую", buttons=room_choices)
+        if action == '🔄️':
+            toast("Список комнат обновлён", color='blue')
+        elif action == 'Создать новую комнату':
             new_room = await input(
                 "Введите название новой комнаты",
                 required=True,
-                validate=lambda r: "Такая комната уже существует" if r in models.rooms else None
+                validate=validate_room_name
             )
             password = await input(
                 "Введите пароль для комнаты (оставьте пустым, если пароль не нужен)",
