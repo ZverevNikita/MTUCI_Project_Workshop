@@ -11,4 +11,4 @@ app.routes.extend(webio_routes(main))
 
 if __name__ == "__main__":
     ip = get_local_ip()
-    uvicorn.run(app, host=ip, port=8080)
+    uvicorn.run(app, host="26.252.229.61", port=8080)

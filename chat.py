@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from pywebio.input import *
 from pywebio.output import *
 from pywebio.session import run_async, run_js
@@ -59,7 +60,7 @@ async def main():
                         continue
                     if models.rooms[room_name]['password'] != entered:
                         toast("Неверный пароль", color='error')
-                        continue 
+                        continue
             break
 
     async with models.data_lock:
@@ -222,16 +223,45 @@ async def main():
     while True:
         data = await input_group("Новое сообщение", [
             input(placeholder="Сообщение...", name="msg"),
+            file_upload("Прикрепить файл", accept="*/*", name="file"),
             actions(name="cmd", buttons=[
                 "Отправить",
                 {'label': "Покинуть чат", 'type': 'cancel'}
             ])
-        ], validate=lambda m: ('msg', "Введите текст") if m["cmd"] == "Отправить" and not m['msg'] else None)
+        ], validate=lambda m: ('msg', "Введите текст или выберите файл")
+           if m["cmd"] == "Отправить" and not m['msg'] and not m['file'] else None)
 
         if data is None:
             break
 
         msg_text = data['msg'].strip()
+        file_data = data['file']
+
+        if file_data:
+            contents = file_data['content']
+            filename = file_data['filename']
+            if len(contents) > 10 * 1024 * 1024:  # 10 MB
+                toast("Файл слишком большой (макс. 10 МБ)", color='error')
+                continue
+            file_id = str(uuid.uuid4())
+            models.files[file_id] = {
+                'data': contents,
+                'filename': filename,
+                'size': len(contents)
+            }
+
+            file_link = f"📁 [{filename}](/file/{file_id}) ({len(contents)} bytes)"
+            full_text = f"{msg_text} {file_link}" if msg_text else file_link
+
+            async with models.data_lock:
+                current_room = models.user_current_room.get(nickname)
+                if current_room:
+                    models.rooms[current_room]['messages'].append((nickname, full_text))
+                    if len(models.rooms[current_room]['messages']) > models.MAX_MESSAGES_PER_ROOM:
+                        models.rooms[current_room]['messages'] = models.rooms[current_room]['messages'][-models.MAX_MESSAGES_PER_ROOM:]
+                    with use_scope('msg-box'):
+                        put_markdown(f"`{nickname}`: {full_text}")
+            continue
 
         if msg_text.startswith('/'):
             parts = msg_text.split(maxsplit=1)

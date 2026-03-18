@@ -9,3 +9,5 @@ rooms['общий'] = {'messages': [], 'users': set(), 'password': None}
 private_channels = defaultdict(list)
 user_current_room = {}
 data_lock = asyncio.Lock()
+
+files = {}
