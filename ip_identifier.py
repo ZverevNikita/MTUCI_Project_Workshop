@@ -11,3 +11,9 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
+def is_ipv4(ip_str):
+    try:
+        return type(ipaddress.ip_address(ip_str)) is ipaddress.IPv4Address
+    except ValueError:
+        return False
