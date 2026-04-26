@@ -1,0 +1,26 @@
+version: '3.6'
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ee:latest'
+    restart: always
+    hostname: 'gitlab.example.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://gitlab.example.com'
+    ports:
+      - '443:443'
+      - '22:22'
+      - '80:80'
+    volumes:
+      - 'C:\Userszvier\devops\gitlab\config:\etc\gitlab'
+      - 'C:\Users\zvier\devops\gitlab\logs:\var\log\gitlab'
+      - 'C:\Users\zvier\devops\gitlab\data:\var\opt\gitlab'
+    shm_size: '256m'
+  gitlab-runner:
+    image: 'gitlab/gitlab-runner:latest'
+    restart: always
+    depends_on:
+      - gitlab
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - 'C:\Users\zvier\devops\gitlab\runner-config:\etc\gitlab-runner'

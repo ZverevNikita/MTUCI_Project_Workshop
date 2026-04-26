@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Комната: {{ room_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #chat-log { height: 400px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .file-message { background: #e9ecef; border-radius: 5px; padding: 5px 10px; display: inline-block; }
+        .file-message a { text-decoration: none; }
+        .file-image-preview { max-width: 200px; max-height: 150px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Комната: {{ room_name }}</h2>
+    <div class="alert alert-info">Вы вошли как: {{ username }}</div>
+    <div id="chat-log"></div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="input-group mb-2">
+                <input type="text" id="chat-message-input" class="form-control" placeholder="Ваше сообщение...">
+                <button id="chat-message-submit" class="btn btn-primary">Отправить</button>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="file" id="file-input" class="form-control">
+                <button id="file-submit" class="btn btn-secondary">Отправить файл</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ room_name|json_script:"room-name" }}
+{{ username|json_script:"username" }}
+
+<script>
+    const roomName = JSON.parse(document.getElementById('room-name').textContent);
+    const username = JSON.parse(document.getElementById('username').textContent);
+    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsScheme}://${window.location.host}/ws/chat/${roomName}/?username=${encodeURIComponent(username)}`;
+    let chatSocket;
+
+    function connectWebSocket() {
+        chatSocket = new WebSocket(wsUrl);
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            const logDiv = document.getElementById('chat-log');
+            if (data.type === 'text') {
+                logDiv.innerHTML += `<div><strong>${escapeHtml(data.username)}:</strong> ${escapeHtml(data.message)}</div>`;
+            } else if (data.type === 'file') {
+                let fileHtml = `<div><strong>${escapeHtml(data.username)}</strong> отправил файл: `;
+                if (data.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    fileHtml += `<div class="file-message"><a href="${data.file_url}" target="_blank">${escapeHtml(data.file_name)}</a><br>
+                                  <img src="${data.file_url}" class="file-image-preview"></div>`;
+                } else {
+                    fileHtml += `<div class="file-message"><a href="${data.file_url}" target="_blank">${escapeHtml(data.file_name)}</a> (${formatFileSize(data.file_size)})</div>`;
+                }
+                fileHtml += `</div>`;
+                logDiv.innerHTML += fileHtml;
+            }
+            logDiv.scrollTop = logDiv.scrollHeight;
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('WebSocket закрыт, переподключение через 1 секунду...');
+            setTimeout(connectWebSocket, 1000);
+        };
+    }
+
+    connectWebSocket();
+
+    function escapeHtml(unsafe) {
+        return unsafe.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    const input = document.getElementById('chat-message-input');
+    const submit = document.getElementById('chat-message-submit');
+    input.focus();
+    input.onkeyup = function(e) {
+        if (e.key === 'Enter') submit.click();
+    };
+    submit.onclick = function() {
+        const message = input.value;
+        if (message) {
+            chatSocket.send(JSON.stringify({'type': 'text', 'message': message}));
+            input.value = '';
+        }
+    };
+
+    const fileInput = document.getElementById('file-input');
+    const fileSubmit = document.getElementById('file-submit');
+    fileSubmit.onclick = async function() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fileSubmit.disabled = true;
+        fileSubmit.textContent = 'Загрузка...';
+
+        try {
+            const response = await fetch(`/chat/${roomName}/upload/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')  // если CSRF включена
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                chatSocket.send(JSON.stringify({
+                    'type': 'file',
+                    'file_url': data.url,
+                    'file_name': data.name,
+                    'file_size': data.size
+                }));
+                fileInput.value = ''; // очищаем
+            } else {
+                alert('Ошибка загрузки: ' + (data.error || 'неизвестная ошибка'));
+            }
+        } catch (err) {
+            alert('Ошибка соединения при загрузке файла');
+        } finally {
+            fileSubmit.disabled = false;
+            fileSubmit.textContent = 'Отправить файл';
+        }
+    };
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+</body>
+</html>

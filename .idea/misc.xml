@@ -4,4 +4,7 @@
     <option name="sdkName" value="Python 3.12 (online_chat) (4)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (online_chat)" project-jdk-type="Python SDK" />
+  <component name="PyCharmProfessionalAdvertiser">
+    <option name="shown" value="true" />
+  </component>
 </project>
