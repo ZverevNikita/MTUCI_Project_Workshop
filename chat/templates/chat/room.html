@@ -7,12 +7,15 @@
     <style>
         #chat-log { height: 400px; overflow-y: auto; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
         .file-message { background: #e9ecef; border-radius: 5px; padding: 5px 10px; display: inline-block; }
-        .file-message a { text-decoration: none; }
         .file-image-preview { max-width: 200px; max-height: 150px; margin-top: 5px; }
+        .ws-status { position: fixed; top: 10px; right: 10px; z-index: 1000; font-size: 12px; padding: 5px 10px; border-radius: 20px; background: white; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        .ws-status.connected { background: #d4edda; color: #155724; }
+        .ws-status.disconnected { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
 <div class="container mt-5">
+    <div class="ws-status" id="ws-status">Подключение...</div>
     <h2>Комната: {{ room_name }}</h2>
     <div class="alert alert-info">Вы вошли как: {{ username }}</div>
     <div id="chat-log"></div>
@@ -37,125 +40,163 @@
 {{ username|json_script:"username" }}
 
 <script>
-    const roomName = JSON.parse(document.getElementById('room-name').textContent);
-    const username = JSON.parse(document.getElementById('username').textContent);
-    const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${wsScheme}://${window.location.host}/ws/chat/${roomName}/?username=${encodeURIComponent(username)}`;
-    let chatSocket;
-
-    function connectWebSocket() {
-        chatSocket = new WebSocket(wsUrl);
-
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            const logDiv = document.getElementById('chat-log');
-            if (data.type === 'text') {
-                logDiv.innerHTML += `<div><strong>${escapeHtml(data.username)}:</strong> ${escapeHtml(data.message)}</div>`;
-            } else if (data.type === 'file') {
-                let fileHtml = `<div><strong>${escapeHtml(data.username)}</strong> отправил файл: `;
-                if (data.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                    fileHtml += `<div class="file-message"><a href="${data.file_url}" target="_blank">${escapeHtml(data.file_name)}</a><br>
-                                  <img src="${data.file_url}" class="file-image-preview"></div>`;
-                } else {
-                    fileHtml += `<div class="file-message"><a href="${data.file_url}" target="_blank">${escapeHtml(data.file_name)}</a> (${formatFileSize(data.file_size)})</div>`;
-                }
-                fileHtml += `</div>`;
-                logDiv.innerHTML += fileHtml;
-            }
-            logDiv.scrollTop = logDiv.scrollHeight;
-        };
-
-        chatSocket.onclose = function(e) {
-            console.error('WebSocket закрыт, переподключение через 1 секунду...');
-            setTimeout(connectWebSocket, 1000);
-        };
-    }
-
-    connectWebSocket();
-
-    function escapeHtml(unsafe) {
-        return unsafe.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-
-    function formatFileSize(bytes) {
-        if (bytes < 1024) return bytes + ' B';
-        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1048576).toFixed(1) + ' MB';
-    }
-
-    const input = document.getElementById('chat-message-input');
-    const submit = document.getElementById('chat-message-submit');
-    input.focus();
-    input.onkeyup = function(e) {
-        if (e.key === 'Enter') submit.click();
-    };
-    submit.onclick = function() {
-        const message = input.value;
-        if (message) {
-            chatSocket.send(JSON.stringify({'type': 'text', 'message': message}));
-            input.value = '';
-        }
-    };
-
-    const fileInput = document.getElementById('file-input');
-    const fileSubmit = document.getElementById('file-submit');
-    fileSubmit.onclick = async function() {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        fileSubmit.disabled = true;
-        fileSubmit.textContent = 'Загрузка...';
-
+    (function() {
+        let roomName, username;
         try {
-            const response = await fetch(`/chat/${roomName}/upload/`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken')  // если CSRF включена
-                }
-            });
-            const data = await response.json();
-            if (response.ok) {
-                chatSocket.send(JSON.stringify({
-                    'type': 'file',
-                    'file_url': data.url,
-                    'file_name': data.name,
-                    'file_size': data.size
-                }));
-                fileInput.value = ''; // очищаем
-            } else {
-                alert('Ошибка загрузки: ' + (data.error || 'неизвестная ошибка'));
-            }
-        } catch (err) {
-            alert('Ошибка соединения при загрузке файла');
-        } finally {
-            fileSubmit.disabled = false;
-            fileSubmit.textContent = 'Отправить файл';
+            roomName = JSON.parse(document.getElementById('room-name').textContent);
+            username = JSON.parse(document.getElementById('username').textContent);
+        } catch(e) {
+            console.error('Ошибка чтения данных', e);
+            document.body.innerHTML = '<div style="color:red;padding:20px;">Ошибка загрузки чата. Проверьте консоль.</div>';
+            return;
         }
-    };
 
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
+        const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsUrl = `${wsProtocol}://${location.host}/ws/chat/${encodeURIComponent(roomName)}/?username=${encodeURIComponent(username)}`;
+        let chatSocket = null;
+        let reconnectTimer = null;
+        let isClosing = false;
+
+        function updateStatus(connected) {
+            const statusDiv = document.getElementById('ws-status');
+            if (statusDiv) {
+                statusDiv.textContent = connected ? 'Соединение установлено' : 'Соединение потеряно';
+                statusDiv.className = `ws-status ${connected ? 'connected' : 'disconnected'}`;
             }
         }
-        return cookieValue;
-    }
+
+        function connectWebSocket() {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) return;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+
+            chatSocket = new WebSocket(wsUrl);
+            chatSocket.onopen = () => {
+                console.log('WebSocket открыт');
+                isClosing = false;
+                updateStatus(true);
+            };
+            chatSocket.onmessage = (e) => {
+                console.log('Получено сообщение:', e.data);
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.type === 'history') {
+                        const logDiv = document.getElementById('chat-log');
+                        if (logDiv) {
+                            logDiv.innerHTML = '';
+                            data.messages.forEach(msg => appendMessage(msg));
+                        }
+                    } else if (data.type === 'text') {
+                        appendMessage({
+                            type: 'text',
+                            username: data.username,
+                            content: data.content,
+                            timestamp: data.timestamp
+                        });
+                    } else if (data.type === 'file') {
+                        appendMessage({
+                            type: 'file',
+                            username: data.username,
+                            file_url: data.file_url,
+                            file_name: data.file_name,
+                            file_size: data.file_size,
+                            timestamp: data.timestamp
+                        });
+                    }
+                } catch(err) { console.error('Ошибка обработки сообщения', err); }
+            };
+            chatSocket.onclose = (e) => {
+                if (!isClosing) {
+                    console.warn('WebSocket закрыт, переподключение...');
+                    updateStatus(false);
+                    reconnectTimer = setTimeout(connectWebSocket, 2000);
+                }
+            };
+            chatSocket.onerror = (e) => { console.error('Ошибка WebSocket', e); chatSocket.close(); };
+        }
+
+        function appendMessage(msg) {
+            const logDiv = document.getElementById('chat-log');
+            if (!logDiv) return;
+            let timeStr = msg.timestamp ? `<small class="text-muted">${new Date(msg.timestamp).toLocaleTimeString()}</small> ` : '';
+            let html = `<div>${timeStr}`;
+            if (msg.type === 'text') {
+                html += `<strong>${escapeHtml(msg.username)}:</strong> ${escapeHtml(msg.content)}</div>`;
+            } else if (msg.type === 'file') {
+                html += `<strong>${escapeHtml(msg.username)}</strong> отправил файл: `;
+                if (msg.file_url && msg.file_url.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    html += `<div class="file-message"><a href="${escapeHtml(msg.file_url)}" target="_blank">${escapeHtml(msg.file_name)}</a><br>
+                              <img src="${escapeHtml(msg.file_url)}" class="file-image-preview"></div>`;
+                } else {
+                    html += `<div class="file-message"><a href="${escapeHtml(msg.file_url)}" target="_blank">${escapeHtml(msg.file_name)}</a> (${formatFileSize(msg.file_size)})</div>`;
+                }
+                html += `</div>`;
+            }
+            logDiv.innerHTML += html;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function escapeHtml(s) { return String(s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+        function formatFileSize(b) { if (!b) return '0 B'; if (b < 1024) return b + ' B'; if (b < 1048576) return (b/1024).toFixed(1) + ' KB'; return (b/1048576).toFixed(1) + ' MB'; }
+        function getCookie(name) { let v = null; if (document.cookie) { for(let c of document.cookie.split(';')) { c = c.trim(); if (c.startsWith(name+'=')) { v = decodeURIComponent(c.substring(name.length+1)); break; } } } return v; }
+
+        const textInput = document.getElementById('chat-message-input');
+        const textSubmit = document.getElementById('chat-message-submit');
+        if (textInput && textSubmit) {
+            textInput.focus();
+            textInput.onkeyup = (e) => { if (e.key === 'Enter') textSubmit.click(); };
+            textSubmit.onclick = () => {
+                const message = textInput.value.trim();
+                if (!message) return;
+                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({ type: 'text', message: message }));
+                    textInput.value = '';
+                } else { alert('Соединение не установлено'); }
+            };
+        }
+
+        const fileInput = document.getElementById('file-input');
+        const fileSubmit = document.getElementById('file-submit');
+        if (fileInput && fileSubmit) {
+            fileSubmit.onclick = async () => {
+                const file = fileInput.files[0];
+                if (!file) return;
+                if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) { alert('Соединение не установлено'); return; }
+
+                const fd = new FormData();
+                fd.append('file', file);
+                fileSubmit.disabled = true;
+                fileSubmit.textContent = 'Загрузка...';
+                try {
+                    const resp = await fetch(`/chat/${encodeURIComponent(roomName)}/upload/`, {
+                        method: 'POST',
+                        body: fd,
+                        headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                    });
+                    const data = await resp.json();
+                    if (resp.ok) {
+                        chatSocket.send(JSON.stringify({
+                            type: 'file',
+                            file_url: data.url,
+                            file_name: data.name,
+                            file_size: data.size
+                        }));
+                        fileInput.value = '';
+                    } else {
+                        alert('Ошибка: ' + (data.error || 'неизвестная'));
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Ошибка загрузки файла');
+                } finally {
+                    fileSubmit.disabled = false;
+                    fileSubmit.textContent = 'Отправить файл';
+                }
+            };
+        }
+
+        window.addEventListener('beforeunload', () => { if (chatSocket) { isClosing = true; chatSocket.close(); } if (reconnectTimer) clearTimeout(reconnectTimer); });
+        connectWebSocket();
+    })();
 </script>
 </body>
 </html>

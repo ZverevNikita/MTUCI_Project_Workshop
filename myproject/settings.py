@@ -3,13 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-DATA_UPLOAD_MAX_NUMBER_FILES = 100
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
-SECRET_KEY = 'some random string'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
+SECRET_KEY = 'django-insecure-8x!^$#q@5h&9*kLmNpQrStUvWxYz1234567890!'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -58,6 +54,8 @@ DATABASES = {
 }
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 ASGI_APPLICATION = 'myproject.asgi.application'
 

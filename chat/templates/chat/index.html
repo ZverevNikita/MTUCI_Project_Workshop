@@ -9,9 +9,7 @@
 <div class="container mt-5">
     <h1>Чат</h1>
     <div class="card mb-4">
-        <div class="card-header">
-            Ваше имя
-        </div>
+        <div class="card-header">Ваше имя</div>
         <div class="card-body">
             <form method="post">
                 {% csrf_token %}
@@ -26,9 +24,7 @@
         </div>
     </div>
     <div class="card mb-4">
-        <div class="card-header">
-            Комнаты
-        </div>
+        <div class="card-header">Комнаты</div>
         <div class="card-body">
             {% if rooms %}
                 <ul class="list-group">
@@ -45,9 +41,7 @@
         </div>
     </div>
     <div class="card">
-        <div class="card-header">
-            Создать новую комнату
-        </div>
+        <div class="card-header">Создать новую комнату</div>
         <div class="card-body">
             <form action="{% url 'create_room' %}" method="post">
                 {% csrf_token %}
