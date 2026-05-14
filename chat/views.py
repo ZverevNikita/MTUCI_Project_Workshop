@@ -13,10 +13,24 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
 
+def menu_creator(request):
+    menu = [
+        {'title': "Главная страница", 'url_name': 'index'},
+    ]
+    if request.user.is_staff or request.user.is_superuser:
+        menu.append({'title': "Админ-панель", 'url_name': 'admin:index'})
+    return(menu)
+
+@login_required(login_url='/login/')
 def index(request):
     rooms = ChatRoom.objects.all().order_by('-created_at')
-    return render(request, 'chat/index.html', {'rooms': rooms})
+    context = {
+        'rooms': rooms,
+        'menu': menu_creator(request),
+    }
+    return render(request, 'chat/index.html', context=context)
 
+@login_required(login_url='/login/')
 def create_room(request):
     if request.method == 'POST':
         room_name = request.POST.get('room_name')
@@ -29,10 +43,12 @@ def create_room(request):
 
 @login_required(login_url='/login/')
 def room(request, room_name):
-    return render(request, 'chat/room.html', {
+    context = {
         'room_name': room_name,
+        'menu': menu_creator(request),
         'username': request.user.username,
-    })
+    }
+    return render(request, 'chat/room.html', context=context)
 
 class RegistrationUser(CreateView):
     form_class = RegistrationForm
