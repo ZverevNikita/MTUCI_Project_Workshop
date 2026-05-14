@@ -1,0 +1,12 @@
+# Core Django
+Django==6.0.3
+
+# WebSockets & ASGI
+channels==4.3.2
+daphne==4.2.1
+
+#Static files serving (production)
+whitenoise==6.12.0
+
+# Utilities
+asgiref==3.11.1
