@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'chat/css/auth.css' %}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div class="auth-container">
+    <div class="auth-card">
+        <h1 class="auth-title">{{ title }}</h1>
+
+        <div class="auth-links">
+            {% block change_reg_log %}{% endblock %}
+        </div>
+
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for f in form %}
+            <div class="form-group">
+                <label for="{{ f.id_for_label }}" class="form-label">{{ f.label }}</label>
+                {{ f }}
+                {% if f.errors %}
+                <div class="form-error">{{ f.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="auth-button">{% block button %}{% endblock %}</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

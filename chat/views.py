@@ -1,20 +1,21 @@
 import os
+from traceback import print_tb
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.core.files.storage import default_storage
 from django.utils.text import get_valid_filename
 from .models import ChatRoom, ChatFile
+from django.views.generic.edit import CreateView
+from django.urls import reverse_lazy
+from .forms import *
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import logout, login
+from django.contrib.auth.decorators import login_required
 
 def index(request):
-    if request.method == 'POST' and 'username' in request.POST:
-        username = request.POST.get('username')
-        if username:
-            request.session['username'] = username
-            return redirect('index')
-    username = request.session.get('username', '')
     rooms = ChatRoom.objects.all().order_by('-created_at')
-    return render(request, 'chat/index.html', {'rooms': rooms, 'username': username})
+    return render(request, 'chat/index.html', {'rooms': rooms})
 
 def create_room(request):
     if request.method == 'POST':
@@ -26,14 +27,40 @@ def create_room(request):
                 return redirect('room', room_name=safe_name)
     return redirect('index')
 
+@login_required(login_url='/login/')
 def room(request, room_name):
-    username = request.session.get('username')
-    if not username:
-        return redirect('index')
     return render(request, 'chat/room.html', {
         'room_name': room_name,
-        'username': username
+        'username': request.user.username,
     })
+
+class RegistrationUser(CreateView):
+    form_class = RegistrationForm
+    template_name = 'chat/register.html'
+    success_url = reverse_lazy('index')
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Регистрация'
+        return context
+
+    def form_valid(self, form):
+        user = form.save()
+        login(self.request, user)
+        return redirect('index')
+
+class LoginUser(LoginView):
+    form_class = LoginForm
+    template_name = 'chat/login.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Авторизация'
+        return context
+
+def logout_user(request):
+    logout(request)
+    return redirect('login')
 
 @require_http_methods(["POST"])
 def upload_file(request, room_name):

@@ -8,21 +8,11 @@
 <body>
 <div class="container mt-5">
     <h1>Чат</h1>
-    <div class="card mb-4">
-        <div class="card-header">Ваше имя</div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="input-group">
-                    <input type="text" name="username" class="form-control" placeholder="Введите ваше имя" value="{{ username }}" required>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-            {% if username %}
-                <div class="mt-2 text-success">Вы вошли как: {{ username }}</div>
-            {% endif %}
-        </div>
-    </div>
+    {% if request.user.is_authenticated %}
+    {{user.username}}|<a href ="{% url 'logout' %}">Выйти</a>
+    {% else %}
+    <a href ="{% url 'register' %}">Регистрация</a>|<a href = "{% url 'login' %}">Войти</a>
+    {% endif %}
     <div class="card mb-4">
         <div class="card-header">Комнаты</div>
         <div class="card-body">

@@ -1,0 +1,6 @@
+{% extends 'chat/reg_log_base.html'%}
+{% block change_reg_log %}
+<p>У вас нет аккаунта?</p> <!-- предложение справа зарегистрироваться -->
+<p><a href ="{% url 'register' %}">Регистрация</a></p>
+{% endblock %}
+{% block button %}Войти{% endblock %}
