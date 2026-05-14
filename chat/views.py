@@ -63,10 +63,9 @@ def logout_user(request):
     return redirect('login')
 
 @require_http_methods(["POST"])
+@login_required(login_url='/login/')
 def upload_file(request, room_name):
-    username = request.session.get('username')
-    if not username:
-        return JsonResponse({'error': 'Не указано имя пользователя'}, status=403)
+    username = request.user.username
 
     if 'file' not in request.FILES:
         return JsonResponse({'error': 'Файл не передан'}, status=400)
