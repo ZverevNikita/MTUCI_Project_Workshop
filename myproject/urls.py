@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
-from chat.views import RegistrationUser, LoginUser, logout_user
+from chat.views import RegistrationUser, LoginUser, logout_user, pageNotFound
 
 urlpatterns = [
     path('', RedirectView.as_view(url='/chat/', permanent=False)),
@@ -13,3 +13,5 @@ urlpatterns = [
     path('login/', LoginUser.as_view(), name='login'),
     path('logout/', logout_user, name='logout'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = pageNotFound

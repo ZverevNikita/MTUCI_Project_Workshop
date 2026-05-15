@@ -140,3 +140,7 @@ def upload_file(request, room_name):
         'name': safe_filename,
         'size': uploaded_file.size,
     })
+
+
+def pageNotFound(request,exception):
+    return render(request, 'chat/404.html', status=404)
