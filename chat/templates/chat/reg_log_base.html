@@ -1,11 +1,226 @@
+<!-- chat/templates/chat/reg_log_base.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{{ title }} | Чат</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'chat/css/auth.css' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Контейнер центрирования */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 40px);
+        }
+
+        /* Карточка формы */
+        .auth-card {
+            max-width: 460px;
+            width: 100%;
+            background: white;
+            border-radius: 28px;
+            padding: 40px 36px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05);
+            animation: fadeInUp 0.4s ease-out;
+            transition: transform 0.2s;
+        }
+
+        .auth-card:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Заголовок */
+        .auth-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        /* Блок переключения (регистрация / вход) */
+        .auth-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: #f8f9ff;
+            padding: 14px 20px;
+            border-radius: 60px;
+            margin-bottom: 28px;
+            font-size: 0.95rem;
+        }
+
+        .auth-links p {
+            margin: 0;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .auth-links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            border-bottom: 1px dashed transparent;
+        }
+
+        .auth-links a:hover {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+        }
+
+        /* Форма */
+        .auth-form {
+            margin-top: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1e2a3a;
+            font-size: 0.9rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 18px;
+            font-size: 1rem;
+            transition: all 0.25s;
+            background-color: #fff;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        /* Кнопка отправки */
+        .auth-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 12px;
+            letter-spacing: 0.3px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-button:active {
+            transform: translateY(1px);
+        }
+
+        /* Ошибки форм */
+        .form-error {
+            color: #e53e3e;
+            font-size: 0.75rem;
+            margin-top: 6px;
+            margin-left: 10px;
+            list-style: none;
+        }
+
+        .errorlist {
+            color: #e53e3e;
+            font-size: 0.75rem;
+            margin-top: 6px;
+            margin-left: 10px;
+            list-style: none;
+        }
+
+        .non-field-errors {
+            background: #fff5f5;
+            border-left: 4px solid #e53e3e;
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            color: #c53030;
+            font-size: 0.85rem;
+        }
+
+        /* Анимация появления */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Адаптивность */
+        @media (max-width: 520px) {
+            .auth-card {
+                padding: 30px 20px;
+                border-radius: 24px;
+            }
+
+            .auth-title {
+                font-size: 1.7rem;
+            }
+
+            .auth-links {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                border-radius: 28px;
+            }
+
+            .form-label {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            body {
+                padding: 12px;
+            }
+
+            .auth-card {
+                padding: 24px 16px;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="auth-container">
@@ -18,16 +233,25 @@
 
         <form method="post" class="auth-form">
             {% csrf_token %}
-            {{ form.non_field_errors }}
+
+            {% if form.non_field_errors %}
+                <div class="non-field-errors">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             {% for f in form %}
-            <div class="form-group">
-                <label for="{{ f.id_for_label }}" class="form-label">{{ f.label }}</label>
-                {{ f }}
-                {% if f.errors %}
-                <div class="form-error">{{ f.errors }}</div>
-                {% endif %}
-            </div>
+                <div class="form-group">
+                    <label for="{{ f.id_for_label }}" class="form-label">{{ f.label }}</label>
+                    {{ f }}
+                    {% if f.errors %}
+                        <div class="form-error">{{ f.errors }}</div>
+                    {% endif %}
+                </div>
             {% endfor %}
+
             <button type="submit" class="auth-button">{% block button %}{% endblock %}</button>
         </form>
     </div>

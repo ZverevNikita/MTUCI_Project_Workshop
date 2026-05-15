@@ -127,12 +127,11 @@
                 ChatApp
             </a>
             <div class="nav-menu">
-                <a href="{% url 'index' %}" class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
-                    Все комнаты
+                {% for m in menu %}
+                <a href="{% url m.url_name %}" class="nav-link {% if request.resolver_match.url_name == m.url_name %}active{% endif %}">
+                    {{m.title}}
                 </a>
-                <a href="{% url 'my_rooms' %}" class="nav-link {% if request.resolver_match.url_name == 'my_rooms' %}active{% endif %}">
-                    Мои комнаты
-                </a>
+                {% endfor %}
             </div>
 
             <div class="user-section">
