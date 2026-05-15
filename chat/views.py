@@ -12,6 +12,7 @@ from .forms import *
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import logout, login
 from django.contrib.auth.decorators import login_required
+from django.http import Http404
 
 def menu_creator(request):
     menu = [
@@ -43,6 +44,8 @@ def create_room(request):
 
 @login_required(login_url='/login/')
 def room(request, room_name):
+    if not ChatRoom.objects.filter(name=room_name).exists():
+        raise Http404("Тест")
     context = {
         'room_name': room_name,
         'menu': menu_creator(request),
