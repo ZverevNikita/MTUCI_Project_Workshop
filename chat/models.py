@@ -1,11 +1,22 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class ChatRoom(models.Model):
     name = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    participants = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='rooms',
+        verbose_name='Участники'
+    )
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        verbose_name = 'Чат-комната'
+        verbose_name_plural = 'Чат-комнаты'
 
 class ChatFile(models.Model):
     file = models.FileField(upload_to='chat_files/%Y/%m/%d/')
@@ -34,3 +45,5 @@ class Message(models.Model):
 
     class Meta:
         ordering = ['timestamp']
+        verbose_name = 'Сообщение'
+        verbose_name_plural = 'Сообщения'

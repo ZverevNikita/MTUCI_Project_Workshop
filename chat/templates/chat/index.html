@@ -1,34 +1,305 @@
-{% extends 'chat/main_base.html'%}
+{% extends 'chat/main_base.html' %}
+{% load static %}
+
 {% block title %}Главная страница{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .hero-section h1 {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-section p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin-bottom: 25px;
+    }
+
+    .stats-badge {
+        display: inline-flex;
+        gap: 20px;
+        background: rgba(255,255,255,0.2);
+        padding: 10px 25px;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        font-weight: 600;
+    }
+
+    .stats-badge span {
+        font-size: 1.2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 600;
+    }
+
+    .room-card {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        border: 1px solid #e8e8e8;
+    }
+
+    .room-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #2a5298;
+    }
+
+    .room-link {
+        text-decoration: none;
+        color: #2c3e50;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+
+    .room-link:hover {
+        color: #2a5298;
+    }
+
+    .room-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .room-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .room-meta {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        color: #7f8c8d;
+        font-size: 0.85rem;
+    }
+
+    .room-date {
+        background: #f0f2f5;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+    }
+
+    .enter-badge {
+        background: #2a5298;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .room-card:hover .enter-badge {
+        background: #1e3c72;
+        transform: scale(1.05);
+    }
+
+    .create-form-card {
+        border: none;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        margin-top: 30px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .create-form-card .card-header {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border-radius: 16px 16px 0 0;
+        padding: 15px 20px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+    }
+
+    .btn-create {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border: none;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30,60,114,0.4);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 16px;
+        border: 2px dashed #dee2e6;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+
+    .empty-state h4 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .room-card {
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    /* Улучшенная читаемость текста */
+    body {
+        background: #f5f7fb;
+    }
+
+    .container {
+        max-width: 1000px;
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 1.8rem;
+        }
+
+        .room-link {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .room-meta {
+            width: 100%;
+            justify-content: space-between;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-5">
-    <h1>Главная страница</h1>
-    <div class="card mb-4">
-        <div class="card-header">Комнаты</div>
-        <div class="card-body">
-            {% if rooms %}
-                <ul class="list-group">
-                {% for room in rooms %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="{% url 'room' room.name %}">{{ room.name }}</a>
-                        <span class="badge bg-secondary">создана: {{ room.created_at|date:"d.m.Y H:i" }}</span>
-                    </li>
-                {% endfor %}
-                </ul>
-            {% else %}
-                <p>Пока нет комнат. Создайте первую!</p>
-            {% endif %}
+<div class="container mt-4">
+    <div class="hero-section">
+        <h1>ChatApp</h1>
+        <p>Добро пожаловать в чат! Общайтесь в реальном времени, создавайте комнаты и находите новых друзей</p>
+        <div class="stats-badge">
+            <span>
+                {{ rooms.count }}
+                {% if rooms.count == 1 %}
+                    комната
+                {% elif rooms.count >= 2 and rooms.count <= 4 %}
+                    комнаты
+                {% else %}
+                    комнат
+                {% endif %}
+            </span>
         </div>
     </div>
-    <div class="card">
-        <div class="card-header">Создать новую комнату</div>
+
+    <div class="section-header">
+        <h3>Все комнаты</h3>
+    </div>
+
+    {% if rooms %}
+        {% for room in rooms %}
+        <div class="room-card">
+            <a href="{% url 'room' room.name %}" class="room-link">
+                <div class="room-name">
+                    <div class="room-icon">
+                        💬
+                    </div>
+                    <span>{{ room.name }}</span>
+                </div>
+                <div class="room-meta">
+                    <span class="room-date">{{ room.created_at|date:"d.m.Y" }} {{ room.created_at|date:"H:i" }}</span>
+                    <span class="enter-badge">войти →</span>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📭</div>
+            <h4>Пока нет комнат</h4>
+            <p class="text-muted">Создайте первую комнату, чтобы начать общение!</p>
+        </div>
+    {% endif %}
+
+    <div class="create-form-card card" id="create-room-form">
+        <div class="card-header">
+            Создать новую комнату
+        </div>
         <div class="card-body">
             <form action="{% url 'create_room' %}" method="post">
                 {% csrf_token %}
                 <div class="input-group">
-                    <input type="text" name="room_name" class="form-control" placeholder="Название комнаты" required>
-                    <button type="submit" class="btn btn-success">Создать и войти</button>
+                    <input type="text" name="room_name" class="form-control form-control-lg"
+                           placeholder="Введите название комнаты..."
+                           required
+                           pattern="[\w\s\-]{3,50}"
+                           title="Название от 3 до 50 символов">
+                    <button type="submit" class="btn btn-create btn-lg">
+                        Создать и войти
+                    </button>
                 </div>
+                <small class="text-muted mt-2 d-block">
+                    Название должно содержать от 3 до 50 символов (буквы, цифры, пробелы)
+                </small>
             </form>
         </div>
     </div>

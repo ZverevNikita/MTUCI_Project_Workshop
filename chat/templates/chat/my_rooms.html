@@ -1,0 +1,399 @@
+{% extends 'chat/main_base.html' %}
+{% load static %}
+
+{% block title %}Мои комнаты{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        color: white;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .hero-section h1 {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-section p {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin-bottom: 25px;
+    }
+
+    .stats-badge {
+        display: inline-flex;
+        gap: 20px;
+        background: rgba(255,255,255,0.2);
+        padding: 10px 25px;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        font-weight: 600;
+    }
+
+    .stats-badge span {
+        font-size: 1.2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        color: #1e3c72;
+        font-weight: 600;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #f0f2f5;
+        padding: 8px 20px;
+        border-radius: 25px;
+        text-decoration: none;
+        color: #2a5298;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+        background: #2a5298;
+        color: white;
+        transform: translateX(-3px);
+    }
+
+    .room-card {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        border: 1px solid #e8e8e8;
+    }
+
+    .room-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #2a5298;
+    }
+
+    .room-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .room-info {
+        flex: 1;
+    }
+
+    .room-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .room-name a {
+        text-decoration: none;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .room-name a:hover {
+        color: #2a5298;
+    }
+
+    .room-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .active-badge {
+        display: inline-block;
+        background: #28a745;
+        color: white;
+        padding: 3px 12px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    .room-details {
+        display: flex;
+        gap: 20px;
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        flex-wrap: wrap;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: #f8f9fa;
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    .room-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-enter {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .btn-enter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30,60,114,0.4);
+        color: white;
+    }
+
+    .btn-leave {
+        background: white;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+        padding: 7px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-leave:hover {
+        background: #dc3545;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8f9fa;
+        border-radius: 16px;
+        border: 2px dashed #dee2e6;
+        margin: 20px 0;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.6;
+    }
+
+    .empty-state h4 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 25px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(30,60,114,0.4);
+        color: white;
+    }
+
+    .btn-success-custom {
+        background: #28a745;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-success-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(40,167,69,0.4);
+        color: white;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .room-card {
+        animation: fadeInUp 0.3s ease-out;
+    }
+
+    body {
+        background: #f5f7fb;
+    }
+
+    .container {
+        max-width: 1000px;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section h1 {
+            font-size: 1.8rem;
+        }
+
+        .room-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .room-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .room-details {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="hero-section">
+        <h1>Мои комнаты</h1>
+        <p>Комнаты, в которых вы участвуете</p>
+        <div class="stats-badge">
+            <span>
+                {{ rooms.count }}
+                {% if rooms.count == 1 %}
+                комната
+            {% elif rooms.count >= 2 and rooms.count <= 4 %}
+                комнаты
+            {% else %}
+                комнат
+            {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <a href="{% url 'index' %}" class="back-link">
+            На главную
+        </a>
+    </div>
+
+    {% if rooms %}
+        {% for room in rooms %}
+        <div class="room-card">
+            <div class="room-content">
+                <div class="room-info">
+                    <div class="room-name">
+                        <a href="{% url 'room' room.name %}">
+                            <div class="room-icon">
+                                💬
+                            </div>
+                            <span>{{ room.name }}</span>
+                            <span class="active-badge">активна</span>
+                        </a>
+                    </div>
+                    <div class="room-details">
+                        <div class="detail-item">
+                            Создана: {{ room.created_at|date:"d.m.Y" }}
+                        </div>
+                        <div class="detail-item">
+                            {{ room.created_at|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="room-actions">
+                    <a href="{% url 'room' room.name %}" class="btn-enter">
+                        Войти
+                    </a>
+                    <form action="{% url 'leave_room' room_name=room.name %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-leave"
+                                onclick="return confirm('Вы действительно хотите покинуть комнату «{{ room.name }}»?')">
+                            Покинуть
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+
+        <div class="empty-state">
+            <div class="empty-state-icon">🏠</div>
+            <h4>У вас пока нет комнат</h4>
+            <p class="text-muted">Присоединитесь к существующей комнате или создайте новую</p>
+            <div class="action-buttons">
+                <a href="{% url 'index' %}" class="btn-primary-custom">
+                    Все комнаты
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

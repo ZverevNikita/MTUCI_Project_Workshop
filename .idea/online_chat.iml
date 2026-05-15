@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module version="4">
   <component name="NewModuleRootManager">
-    <orderEntry type="jdk" jdkName="Python 3.14 (MTUCI_Project_Workshop)" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (MTUCI)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
